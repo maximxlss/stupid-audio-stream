@@ -22,7 +22,7 @@ lazy_static! {
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    /// The source eg. "udp://localhost:1234" or "mic"
+    /// The source eg. "udp://0.0.0.0:1234" or "mic"
     /// WASAPI devices are found by looking at case-insensitive inclusion of provided name
     source: String,
 
