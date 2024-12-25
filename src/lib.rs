@@ -1,3 +1,5 @@
+use std::sync::atomic::AtomicUsize;
+
 use lazy_static::lazy_static;
 use wasapi::WaveFormat;
 
@@ -10,7 +12,8 @@ pub use sources::*;
 mod sinks;
 pub use sinks::*;
 
-const MAX_DATAGRAM: usize = 5000;
+// TODO: I guess this global state is bad practice??
+pub static MAX_DATAGRAM: AtomicUsize = AtomicUsize::new(5000);
 
 lazy_static! {
     static ref DEFAULT_FORMAT: WaveFormat =

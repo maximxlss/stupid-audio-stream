@@ -21,11 +21,15 @@ impl Source for AudioCaptureClient {
     }
 }
 
-impl Source for UdpSocket {
+struct UdpSourcePack {
+    socket: UdpSocket,
+    buffer: Vec<u8>,
+}
+
+impl Source for UdpSourcePack {
     fn read_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<usize> {
-        let mut frame = [0u8; MAX_DATAGRAM];
-        let (n_read, _) = self.recv_from(&mut frame)?;
-        buf.write(&frame[..n_read])?;
+        let (n_read, _) = self.socket.recv_from(self.buffer.as_mut_slice())?;
+        buf.write(&self.buffer[..n_read])?;
         Ok(n_read)
     }
 }
@@ -33,8 +37,11 @@ impl Source for UdpSocket {
 pub fn get_source_from_string(query: &str) -> Result<(Box<dyn Source>, Option<Handle>)> {
     Ok(if let Some(address) = query.strip_prefix("udp://") {
         let socket = UdpSocket::bind(&address)?;
-        info!("Listening on {address}");
-        (Box::new(socket), None)
+        let buffer_size = MAX_DATAGRAM.load(std::sync::atomic::Ordering::Relaxed);
+        let buffer = vec![0u8; buffer_size];
+        let pack = UdpSourcePack {socket, buffer};
+        info!("Listening on {address} to packets of a most {buffer_size} bytes");
+        (Box::new(pack), None)
     } else {
         let device = find_device_by_name(Direction::Capture, &query)?;
         let client = open_device_with_format(&device, &DEFAULT_FORMAT)?;

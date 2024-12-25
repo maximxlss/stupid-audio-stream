@@ -39,13 +39,16 @@ impl Sink for DeviceSinkPack {
     }
 }
 
-impl Sink for UdpSocket {
-    fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize> {
-        let mut frame = [0u8; MAX_DATAGRAM];
+struct UdpSinkPack {
+    socket: UdpSocket,
+    buffer: Vec<u8>,
+}
 
-        let n_sent = usize::min(MAX_DATAGRAM, data.len());
-        data.read_exact(&mut frame[..n_sent])?;
-        self.send(&frame[..n_sent])?;
+impl Sink for UdpSinkPack {
+    fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize> {
+        let n_sent = usize::min(self.buffer.len(), data.len());
+        data.read_exact(&mut self.buffer[..n_sent])?;
+        self.socket.send(&self.buffer[..n_sent])?;
 
         Ok(n_sent)
     }
@@ -55,8 +58,11 @@ pub fn get_sink_from_string(query: &str) -> Result<(Box<dyn Sink>, Option<Handle
     Ok(if let Some(address) = query.strip_prefix("udp://") {
         let socket = UdpSocket::bind("0.0.0.0:13371")?;
         socket.connect(address)?;
-        info!("Sending to {address}");
-        (Box::new(socket), None)
+        let buffer_size = MAX_DATAGRAM.load(std::sync::atomic::Ordering::Relaxed);
+        let buffer = vec![0u8; buffer_size];
+        let pack = UdpSinkPack {socket, buffer};
+        info!("Sending to {address} datagrams of up to {buffer_size} bytes");
+        (Box::new(pack), None)
     } else {
         let device = find_device_by_name(Direction::Render, &query)?;
         let client = open_device_with_format(&device, &DEFAULT_FORMAT)?;

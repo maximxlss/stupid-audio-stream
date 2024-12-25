@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use stupid_audio_stream::{
-    get_sink_from_string, get_source_from_string
+    get_sink_from_string, get_source_from_string, MAX_DATAGRAM
 };
 use wasapi::initialize_mta;
 
@@ -26,6 +26,10 @@ struct Args {
     /// Max internal buffer length
     #[arg(short, long, default_value_t = 10000)]
     buffer_limit: usize,
+
+    /// UDP datagram size limit
+    #[arg(short, long, default_value_t = 5000)]
+    datagram_size: usize,
 }
 
 fn main() -> Result<()> {
@@ -41,6 +45,8 @@ fn main() -> Result<()> {
     initialize_mta().unwrap();
 
     let args = Args::parse();
+
+    MAX_DATAGRAM.store(args.datagram_size, std::sync::atomic::Ordering::Relaxed);
 
     let mut event_handlers = Vec::new();
 
