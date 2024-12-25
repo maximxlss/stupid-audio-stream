@@ -5,7 +5,7 @@ use wasapi::{AudioClient, AudioRenderClient, Direction, Handle, WaveFormat};
 
 use anyhow::{Result, anyhow};
 
-use crate::{DEFAULT_FORMAT, MAX_DATAGRAM, find_device_by_name, open_device_with_format};
+use crate::{find_device_by_name, open_device_with_format, Args, DEFAULT_FORMAT};
 
 pub trait Sink {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize>;
@@ -54,17 +54,17 @@ impl Sink for UdpSinkPack {
     }
 }
 
-pub fn get_sink_from_string(query: &str) -> Result<(Box<dyn Sink>, Option<Handle>)> {
-    Ok(if let Some(address) = query.strip_prefix("udp://") {
+pub fn get_sink_from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)> {
+    Ok(if let Some(address) = args.sink.strip_prefix("udp://") {
         let socket = UdpSocket::bind("0.0.0.0:13371")?;
         socket.connect(address)?;
-        let buffer_size = MAX_DATAGRAM.load(std::sync::atomic::Ordering::Relaxed);
+        let buffer_size = args.datagram_size;
         let buffer = vec![0u8; buffer_size];
         let pack = UdpSinkPack {socket, buffer};
         info!("Sending to {address} datagrams of up to {buffer_size} bytes");
         (Box::new(pack), None)
     } else {
-        let device = find_device_by_name(Direction::Render, &query)?;
+        let device = find_device_by_name(Direction::Render, &args.sink)?;
         let client = open_device_with_format(&device, &DEFAULT_FORMAT)?;
         let render_client = client
             .get_audiorenderclient()

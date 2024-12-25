@@ -1,8 +1,7 @@
 use std::collections::VecDeque;
 
-use stupid_audio_stream::{
-    get_sink_from_string, get_source_from_string, Args, MAX_DATAGRAM
-};
+use clap::Parser;
+use stupid_audio_stream::{get_sink_from_args, get_source_from_args, Args};
 use wasapi::initialize_mta;
 
 use anyhow::{Result, anyhow};
@@ -23,16 +22,14 @@ fn main() -> Result<()> {
 
     let args = Args::parse();
 
-    MAX_DATAGRAM.store(args.datagram_size, std::sync::atomic::Ordering::Relaxed);
-
     let mut event_handlers = Vec::new();
 
-    let (mut source, possible_event_handler) = get_source_from_string(&args.source)?;
+    let (mut source, possible_event_handler) = get_source_from_args(&args)?;
     if let Some(event_handler) = possible_event_handler {
         event_handlers.push(event_handler);
     }
 
-    let (mut sink, possible_event_handler) = get_sink_from_string(&args.sink)?;
+    let (mut sink, possible_event_handler) = get_sink_from_args(&args)?;
     if let Some(event_handler) = possible_event_handler {
         event_handlers.push(event_handler);
     }
