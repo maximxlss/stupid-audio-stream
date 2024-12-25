@@ -1,6 +1,4 @@
 use clap::{command, Parser};
-use lazy_static::lazy_static;
-use wasapi::WaveFormat;
 
 mod device_management;
 pub use device_management::*;
@@ -10,11 +8,6 @@ pub use sources::*;
 
 mod sinks;
 pub use sinks::*;
-
-lazy_static! {
-    static ref DEFAULT_FORMAT: WaveFormat =
-        WaveFormat::new(16, 16, &wasapi::SampleType::Int, 48000, 2, None);
-}
 
 /// Program to stream raw audio data between WASAPI devices and UDP sockets
 #[derive(Parser, Debug)]
@@ -35,4 +28,16 @@ pub struct Args {
     /// UDP datagram size limit
     #[arg(short, long, default_value_t = 5000)]
     pub datagram_size: usize,
+
+    /// Bits per sample
+    #[arg(short, long, default_value_t = 32)]
+    bits_per_sample: usize,
+
+    /// Sample rate
+    #[arg(short, long, default_value_t = 48000)]
+    sample_rate: usize,
+
+    /// Channels
+    #[arg(short, long, default_value_t = 2)]
+    channels: usize,
 }

@@ -5,7 +5,7 @@ use wasapi::{AudioClient, AudioRenderClient, Direction, Handle, WaveFormat};
 
 use anyhow::{Result, anyhow};
 
-use crate::{find_device_by_name, open_device_with_format, Args, DEFAULT_FORMAT};
+use crate::{find_device_by_name, open_device_with_format, Args};
 
 pub trait Sink {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize>;
@@ -64,8 +64,9 @@ pub fn get_sink_from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)
         info!("Sending to {address} datagrams of up to {buffer_size} bytes");
         (Box::new(pack), None)
     } else {
+        let format = WaveFormat::new(args.bits_per_sample, args.bits_per_sample, &wasapi::SampleType::Int, args.sample_rate, args.channels, None);
         let device = find_device_by_name(Direction::Render, &args.sink)?;
-        let client = open_device_with_format(&device, &DEFAULT_FORMAT)?;
+        let client = open_device_with_format(&device, &format)?;
         let render_client = client
             .get_audiorenderclient()
             .map_err(|err| anyhow!("Can't get the capture client for device: {err}"))?;
@@ -84,7 +85,7 @@ pub fn get_sink_from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)
             Box::new(DeviceSinkPack {
                 render_client,
                 client,
-                format: DEFAULT_FORMAT.clone(),
+                format: format,
             }),
             Some(event_handle),
         )
