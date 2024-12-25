@@ -6,7 +6,7 @@ use wasapi::{
 };
 
 use anyhow::{Result, anyhow};
-use log::info;
+use log::{info, warn};
 use simplelog::{self, SimpleLogger};
 
 use clap::Parser;
@@ -29,6 +29,10 @@ struct Args {
     /// The sink eg. "udp://192.123.123.1:1234" or "speakers"
     /// WASAPI devices are found by looking at case-insensitive inclusion of provided name
     sink: String,
+
+    /// Max internal buffer length
+    #[arg(short, long, default_value_t=10000)]
+    buffer_limit: usize,
 }
 
 fn main() -> Result<()> {
@@ -116,6 +120,10 @@ fn main() -> Result<()> {
     loop {
         source.read_to_deque(&mut deq)?;
         sink.send_from_deque(&mut deq)?;
+        if deq.len() > args.buffer_limit {
+            deq.clear();
+            warn!("Buffer too full, clearing.");
+        }
         for event_handler in &event_handlers {
             event_handler
                 .wait_for_event(1000)
