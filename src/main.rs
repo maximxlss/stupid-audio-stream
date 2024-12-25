@@ -1,22 +1,15 @@
-use std::{collections::VecDeque, net::UdpSocket};
+use std::collections::VecDeque;
 
-use stupid_audio_stream::{find_device_by_name, open_device_with_format, DeviceSinkPack, Sink, Source};
-use wasapi::{
-    Direction, WaveFormat, initialize_mta,
+use stupid_audio_stream::{
+    get_sink_from_string, get_source_from_string
 };
+use wasapi::initialize_mta;
 
 use anyhow::{Result, anyhow};
-use log::{info, warn};
+use log::warn;
 use simplelog::{self, SimpleLogger};
 
 use clap::Parser;
-use lazy_static::lazy_static;
-
-
-lazy_static! {
-    static ref DEFAULT_FORMAT: WaveFormat =
-        WaveFormat::new(16, 16, &wasapi::SampleType::Int, 48000, 2, None);
-}
 
 /// Program to stream raw audio data between WASAPI devices and UDP sockets
 #[derive(Parser, Debug)]
@@ -31,7 +24,7 @@ struct Args {
     sink: String,
 
     /// Max internal buffer length
-    #[arg(short, long, default_value_t=10000)]
+    #[arg(short, long, default_value_t = 10000)]
     buffer_limit: usize,
 }
 
@@ -51,66 +44,12 @@ fn main() -> Result<()> {
 
     let mut event_handlers = Vec::new();
 
-    let (mut source, possible_event_handler): (Box<dyn Source>, _) =
-        if let Some(address) = args.source.strip_prefix("udp://") {
-            let socket = UdpSocket::bind(&address)?;
-            info!("Listening on {address}");
-            (Box::new(socket), None)
-        } else {
-            let device = find_device_by_name(Direction::Capture, &args.source)?;
-            let client = open_device_with_format(&device, &DEFAULT_FORMAT)?;
-            let capture_client = client
-                .get_audiocaptureclient()
-                .map_err(|err| anyhow!("Can't get the capture client for device: {err}"))?;
-            let event_handle = client
-                .set_get_eventhandle()
-                .map_err(|err| anyhow!("Couldn't get event handle of device: {err}"))?;
-            client
-                .start_stream()
-                .map_err(|err| anyhow!("Couldn't start stream of device: {err}"))?;
-
-            let name = device
-                .get_friendlyname()
-                .map_err(|err| anyhow!("Couldn't get device name due to error: {err}"))?;
-            info!("Capturing from {name}");
-            (Box::new(capture_client), Some(event_handle))
-        };
+    let (mut source, possible_event_handler) = get_source_from_string(&args.source)?;
     if let Some(event_handler) = possible_event_handler {
         event_handlers.push(event_handler);
     }
 
-    let (mut sink, possible_event_handler): (Box<dyn Sink>, _) =
-        if let Some(address) = args.sink.strip_prefix("udp://") {
-            let socket = UdpSocket::bind("0.0.0.0:13371")?;
-            socket.connect(address)?;
-            info!("Sending to {address}");
-            (Box::new(socket), None)
-        } else {
-            let device = find_device_by_name(Direction::Render, &args.sink)?;
-            let client = open_device_with_format(&device, &DEFAULT_FORMAT)?;
-            let render_client = client
-                .get_audiorenderclient()
-                .map_err(|err| anyhow!("Can't get the capture client for device: {err}"))?;
-            let event_handle = client
-                .set_get_eventhandle()
-                .map_err(|err| anyhow!("Couldn't get event handle of device: {err}"))?;
-            client
-                .start_stream()
-                .map_err(|err| anyhow!("Couldn't start stream of device: {err}"))?;
-
-            let name = device
-                .get_friendlyname()
-                .map_err(|err| anyhow!("Couldn't get device name due to error: {err}"))?;
-            info!("Sending to {name}");
-            (
-                Box::new(DeviceSinkPack {
-                    render_client,
-                    client,
-                    format: DEFAULT_FORMAT.clone(),
-                }),
-                Some(event_handle),
-            )
-        };
+    let (mut sink, possible_event_handler) = get_sink_from_string(&args.sink)?;
     if let Some(event_handler) = possible_event_handler {
         event_handlers.push(event_handler);
     }

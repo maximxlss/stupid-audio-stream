@@ -1,7 +1,4 @@
-use wasapi::{
-    AudioClient, Device, DeviceCollection, DeviceState,
-    Direction, WaveFormat,
-};
+use wasapi::{AudioClient, Device, DeviceCollection, DeviceState, Direction, WaveFormat};
 
 use anyhow::{Result, anyhow, bail};
 use log::debug;
@@ -64,4 +61,3 @@ pub fn open_device_with_format(device: &Device, format: &WaveFormat) -> Result<A
 
     Ok(client)
 }
-

@@ -1,12 +1,11 @@
 use std::{collections::VecDeque, io::Read, net::UdpSocket};
 
-use wasapi::{
-    AudioClient, AudioRenderClient, WaveFormat
-};
+use log::info;
+use wasapi::{AudioClient, AudioRenderClient, Direction, Handle, WaveFormat};
 
 use anyhow::{Result, anyhow};
 
-use crate::MAX_DATAGRAM;
+use crate::{DEFAULT_FORMAT, MAX_DATAGRAM, find_device_by_name, open_device_with_format};
 
 pub trait Sink {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize>;
@@ -40,8 +39,6 @@ impl Sink for DeviceSinkPack {
     }
 }
 
-
-
 impl Sink for UdpSocket {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize> {
         let mut frame = [0u8; MAX_DATAGRAM];
@@ -52,4 +49,38 @@ impl Sink for UdpSocket {
 
         Ok(n_sent)
     }
+}
+
+pub fn get_sink_from_string(query: &str) -> Result<(Box<dyn Sink>, Option<Handle>)> {
+    Ok(if let Some(address) = query.strip_prefix("udp://") {
+        let socket = UdpSocket::bind("0.0.0.0:13371")?;
+        socket.connect(address)?;
+        info!("Sending to {address}");
+        (Box::new(socket), None)
+    } else {
+        let device = find_device_by_name(Direction::Render, &query)?;
+        let client = open_device_with_format(&device, &DEFAULT_FORMAT)?;
+        let render_client = client
+            .get_audiorenderclient()
+            .map_err(|err| anyhow!("Can't get the capture client for device: {err}"))?;
+        let event_handle = client
+            .set_get_eventhandle()
+            .map_err(|err| anyhow!("Couldn't get event handle of device: {err}"))?;
+        client
+            .start_stream()
+            .map_err(|err| anyhow!("Couldn't start stream of device: {err}"))?;
+
+        let name = device
+            .get_friendlyname()
+            .map_err(|err| anyhow!("Couldn't get device name due to error: {err}"))?;
+        info!("Sending to {name}");
+        (
+            Box::new(DeviceSinkPack {
+                render_client,
+                client,
+                format: DEFAULT_FORMAT.clone(),
+            }),
+            Some(event_handle),
+        )
+    })
 }
