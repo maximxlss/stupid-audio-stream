@@ -56,7 +56,7 @@ impl Sink for UdpSinkPack {
 
 pub fn get_sink_from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)> {
     Ok(if let Some(address) = args.sink.strip_prefix("udp://") {
-        let socket = UdpSocket::bind("0.0.0.0:13371")?;
+        let socket = UdpSocket::bind("0.0.0.0:0")?;
         socket.connect(address)?;
         let buffer_size = args.datagram_size;
         let buffer = vec![0u8; buffer_size];
