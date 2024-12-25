@@ -1,36 +1,13 @@
 use std::collections::VecDeque;
 
 use stupid_audio_stream::{
-    get_sink_from_string, get_source_from_string, MAX_DATAGRAM
+    get_sink_from_string, get_source_from_string, Args, MAX_DATAGRAM
 };
 use wasapi::initialize_mta;
 
 use anyhow::{Result, anyhow};
 use log::warn;
 use simplelog::{self, SimpleLogger};
-
-use clap::Parser;
-
-/// Program to stream raw audio data between WASAPI devices and UDP sockets
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-struct Args {
-    /// The source eg. "udp://0.0.0.0:1234" or "mic"
-    /// WASAPI devices are found by looking at case-insensitive inclusion of provided name
-    source: String,
-
-    /// The sink eg. "udp://192.123.123.1:1234" or "speakers"
-    /// WASAPI devices are found by looking at case-insensitive inclusion of provided name
-    sink: String,
-
-    /// Max internal buffer length
-    #[arg(short, long, default_value_t = 10000)]
-    buffer_limit: usize,
-
-    /// UDP datagram size limit
-    #[arg(short, long, default_value_t = 5000)]
-    datagram_size: usize,
-}
 
 fn main() -> Result<()> {
     SimpleLogger::init(
