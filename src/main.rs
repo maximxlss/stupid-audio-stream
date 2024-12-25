@@ -18,7 +18,7 @@ lazy_static! {
         WaveFormat::new(16, 16, &wasapi::SampleType::Int, 48000, 2, None);
 }
 
-/// Program to stream raw audio data between WASAPI and UDP sockets
+/// Program to stream raw audio data between WASAPI devices and UDP sockets
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
