@@ -128,7 +128,7 @@ impl Source for CheckedUdpSourcePack {
             },
             Ordering::Equal => {}
         }
-        buf.write(&self.buffer[tag_size..(tag_size + n_read)])?;
+        buf.write(&self.buffer[tag_size..n_read])?;
 
         self.current_id += 1;
 
