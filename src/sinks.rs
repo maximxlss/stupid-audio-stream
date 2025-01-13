@@ -1,58 +1,16 @@
-use std::{collections::VecDeque, io::Read, net::UdpSocket};
+use std::{collections::VecDeque, net::UdpSocket};
 
 use log::info;
-use wasapi::{AudioClient, AudioRenderClient, Direction, Handle, WaveFormat};
+use wasapi::{Direction, Handle, WaveFormat};
 
 use anyhow::{Result, anyhow};
 
-use crate::{find_device_by_name, open_device_with_format, Args};
 
 pub trait Sink {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize>;
 }
 
-pub struct DeviceSinkPack {
-    pub client: AudioClient,
-    pub render_client: AudioRenderClient,
-    pub format: WaveFormat,
-}
-
-impl Sink for DeviceSinkPack {
-    fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize> {
-        let mut frames_to_write =
-            self.client
-                .get_available_space_in_frames()
-                .map_err(|err| anyhow!("Can't get available space: {err}"))? as usize;
-        let blockalign = self.format.get_blockalign() as usize;
-        if frames_to_write as usize > data.len() / blockalign {
-            frames_to_write = data.len() / blockalign;
-        }
-        if frames_to_write == 0 {
-            return Ok(0);
-        }
-        let len_before = data.len();
-        self.render_client
-            .write_to_device_from_deque(frames_to_write, data, None)
-            .map_err(|err| anyhow!("Couldn't write to device: {err}"))?;
-        let n_sent = len_before - data.len();
-        return Ok(n_sent);
-    }
-}
-
-struct UdpSinkPack {
-    socket: UdpSocket,
-    buffer: Vec<u8>,
-}
-
-impl Sink for UdpSinkPack {
-    fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize> {
-        let n_sent = usize::min(self.buffer.len(), data.len());
-        data.read_exact(&mut self.buffer[..n_sent])?;
-        self.socket.send(&self.buffer[..n_sent])?;
-
-        Ok(n_sent)
-    }
-}
+use crate::{device::DeviceSinkPack, device_utils::{find_device_by_name, open_device_with_format}, network, Args};
 
 pub fn get_sink_from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)> {
     Ok(if let Some(address) = args.sink.strip_prefix("udp://") {
@@ -60,7 +18,7 @@ pub fn get_sink_from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)
         socket.connect(address)?;
         let buffer_size = args.datagram_size;
         let buffer = vec![0u8; buffer_size];
-        let pack = UdpSinkPack {socket, buffer};
+        let pack = network::UdpSinkPack {socket, buffer};
         info!("Sending to {address} datagrams of up to {buffer_size} bytes");
         (Box::new(pack), None)
     } else {

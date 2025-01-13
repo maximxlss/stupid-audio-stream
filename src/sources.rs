@@ -1,37 +1,14 @@
-use std::{collections::VecDeque, io::Write, net::UdpSocket};
+use std::{collections::VecDeque, net::UdpSocket};
 
 use log::info;
-use wasapi::{AudioCaptureClient, Direction, Handle, WaveFormat};
+use wasapi::{Direction, Handle, WaveFormat};
 
 use anyhow::{Result, anyhow};
 
-use crate::{find_device_by_name, open_device_with_format, Args};
+use crate::{device_utils::{find_device_by_name, open_device_with_format}, network::UdpSourcePack, Args};
 
 pub trait Source {
     fn read_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<usize>;
-}
-
-impl Source for AudioCaptureClient {
-    fn read_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<usize> {
-        let len_before = buf.len();
-        self.read_from_device_to_deque(buf)
-            .map_err(|err| anyhow!("Couldn't read from device: {err}"))?;
-        let n_read = buf.len() - len_before;
-        return Ok(n_read);
-    }
-}
-
-struct UdpSourcePack {
-    socket: UdpSocket,
-    buffer: Vec<u8>,
-}
-
-impl Source for UdpSourcePack {
-    fn read_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<usize> {
-        let (n_read, _) = self.socket.recv_from(self.buffer.as_mut_slice())?;
-        buf.write(&self.buffer[..n_read])?;
-        Ok(n_read)
-    }
 }
 
 pub fn get_source_from_args(args: &Args) -> Result<(Box<dyn Source>, Option<Handle>)> {

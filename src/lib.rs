@@ -1,13 +1,10 @@
 use clap::{command, Parser};
 
-mod device_management;
-pub use device_management::*;
-
-mod sources;
-pub use sources::*;
-
-mod sinks;
-pub use sinks::*;
+pub mod sources;
+pub mod sinks;
+pub mod network;
+pub mod device;
+pub mod device_utils;
 
 /// Program to stream raw audio data between WASAPI devices and UDP sockets
 #[derive(Parser, Debug)]
