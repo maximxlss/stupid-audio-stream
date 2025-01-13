@@ -31,13 +31,13 @@ pub struct Args {
 
     /// Bits per sample
     #[arg(long, default_value_t = 32)]
-    bits_per_sample: usize,
+    pub bits_per_sample: usize,
 
     /// Sample rate
     #[arg(short, long, default_value_t = 48000)]
-    sample_rate: usize,
+    pub sample_rate: usize,
 
     /// Channels
     #[arg(short, long, default_value_t = 2)]
-    channels: usize,
+    pub channels: usize,
 }
