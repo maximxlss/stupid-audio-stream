@@ -10,9 +10,9 @@ pub trait Sink {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize>;
 }
 
-use crate::{device::DeviceSinkPack, device_utils::{find_device_by_name, open_device_with_format}, network, Args};
+use crate::{device::DeviceSinkPack, device_utils, network, Args};
 
-pub fn get_sink_from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)> {
+pub fn from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)> {
     Ok(if let Some(address) = args.sink.strip_prefix("udp://") {
         let socket = UdpSocket::bind("0.0.0.0:0")?;
         socket.connect(address)?;
@@ -22,8 +22,8 @@ pub fn get_sink_from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)
         (Box::new(pack), None)
     } else {
         let format = WaveFormat::new(args.bits_per_sample, args.bits_per_sample, &wasapi::SampleType::Int, args.sample_rate, args.channels, None);
-        let device = find_device_by_name(Direction::Render, &args.sink)?;
-        let client = open_device_with_format(&device, &format)?;
+        let device = device_utils::find_device_by_name(Direction::Render, &args.sink)?;
+        let client = device_utils::open_device_with_format(&device, &format)?;
         let render_client = client
             .get_audiorenderclient()
             .map_err(|err| anyhow!("Can't get the capture client for device: {err}"))?;

@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use clap::Parser;
-use stupid_audio_stream::{sinks::get_sink_from_args, sources::get_source_from_args, Args};
+use stupid_audio_stream::{sinks, sources, Args};
 use wasapi::initialize_mta;
 
 use anyhow::{Result, anyhow};
@@ -24,12 +24,12 @@ fn main() -> Result<()> {
 
     let mut event_handlers = Vec::new();
 
-    let (mut source, possible_event_handler) = get_source_from_args(&args)?;
+    let (mut source, possible_event_handler) = sources::from_args(&args)?;
     if let Some(event_handler) = possible_event_handler {
         event_handlers.push(event_handler);
     }
 
-    let (mut sink, possible_event_handler) = get_sink_from_args(&args)?;
+    let (mut sink, possible_event_handler) = sinks::from_args(&args)?;
     if let Some(event_handler) = possible_event_handler {
         event_handlers.push(event_handler);
     }
