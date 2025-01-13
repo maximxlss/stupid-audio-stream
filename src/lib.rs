@@ -30,7 +30,7 @@ pub struct Args {
     pub datagram_size: usize,
 
     /// Bits per sample
-    #[arg(short, long, default_value_t = 32)]
+    #[arg(long, default_value_t = 32)]
     bits_per_sample: usize,
 
     /// Sample rate
