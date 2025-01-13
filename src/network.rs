@@ -21,7 +21,13 @@ impl UdpSinkPack {
 
 impl Sink for UdpSinkPack {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize> {
+        if data.len() == 0 {
+            return Ok(0);
+        }
         let n_sent = usize::min(self.buffer.len(), data.len());
+        if n_sent == self.buffer.len() {
+            warn!("Splitting datagram!");
+        }
         data.read_exact(&mut self.buffer[..n_sent])?;
         self.socket.send(&self.buffer[..n_sent])?;
 
@@ -72,8 +78,14 @@ impl CheckedUdpSinkPack {
 
 impl Sink for CheckedUdpSinkPack {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize> {
+        if data.len() == 0 {
+            return Ok(0);
+        }
         let tag = self.current_id.to_be_bytes();
         let n_sent = usize::min(self.buffer.len(), data.len() + tag.len());
+        if n_sent == self.buffer.len() {
+            warn!("Splitting datagram!");
+        }
         self.buffer[..tag.len()].copy_from_slice(&tag);
         data.read_exact(&mut self.buffer[tag.len()..n_sent])?;
         self.socket.send(&self.buffer[..n_sent])?;
