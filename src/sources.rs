@@ -15,9 +15,15 @@ pub fn from_args(args: &Args) -> Result<(Box<dyn Source>, Option<Handle>)> {
     Ok(if let Some(address) = args.source.strip_prefix("udp://") {
         let socket = UdpSocket::bind(&address)?;
         let buffer_size = args.datagram_size;
-        let pack = network::UdpSourcePack::new(socket, buffer_size);
-        info!("Listening on {address} to packets of a most {buffer_size} bytes");
-        (Box::new(pack), None)
+        if args.checked_udp {
+            let pack = network::CheckedUdpSourcePack::new(socket, buffer_size);
+            info!("Listening on {address} to packets of a most {buffer_size} bytes with loss checks");
+            (Box::new(pack), None)
+        } else {
+            let pack = network::UdpSourcePack::new(socket, buffer_size);
+            info!("Listening on {address} to packets of a most {buffer_size} bytes");
+            (Box::new(pack), None)
+        }
     } else {
         let format = WaveFormat::new(args.bits_per_sample, args.bits_per_sample, &wasapi::SampleType::Int, args.sample_rate, args.channels, None);
         let device = device_utils::find_device_by_name(Direction::Capture, &args.source)?;

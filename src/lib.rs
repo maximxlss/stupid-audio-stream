@@ -37,4 +37,8 @@ pub struct Args {
     /// Channels
     #[arg(short, long, default_value_t = 2)]
     pub channels: usize,
+
+    /// Check UDP packet order and loss
+    #[arg(long)]
+    pub checked_udp: bool,
 }

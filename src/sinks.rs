@@ -17,9 +17,15 @@ pub fn from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)> {
         let socket = UdpSocket::bind("0.0.0.0:0")?;
         socket.connect(address)?;
         let buffer_size = args.datagram_size;
-        let pack = network::UdpSinkPack::new(socket, buffer_size);
-        info!("Sending to {address} datagrams of up to {buffer_size} bytes");
-        (Box::new(pack), None)
+        if args.checked_udp {
+            let pack = network::CheckedUdpSinkPack::new(socket, buffer_size);
+            info!("Sending to {address} datagrams of up to {buffer_size} bytes with loss checks");
+            (Box::new(pack), None)
+        } else {
+            let pack = network::UdpSinkPack::new(socket, buffer_size);
+            info!("Sending to {address} datagrams of up to {buffer_size} bytes");
+            (Box::new(pack), None)
+        }
     } else {
         let format = WaveFormat::new(args.bits_per_sample, args.bits_per_sample, &wasapi::SampleType::Int, args.sample_rate, args.channels, None);
         let device = device_utils::find_device_by_name(Direction::Render, &args.sink)?;
