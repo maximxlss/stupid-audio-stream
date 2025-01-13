@@ -10,6 +10,15 @@ pub struct UdpSinkPack {
     pub buffer: Vec<u8>,
 }
 
+impl UdpSinkPack {
+    pub fn new(socket: UdpSocket, buffer_size: usize) -> Self {
+        Self {
+            socket,
+            buffer: vec![0; buffer_size]
+        }
+    }
+}
+
 impl Sink for UdpSinkPack {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize> {
         let n_sent = usize::min(self.buffer.len(), data.len());
@@ -23,6 +32,15 @@ impl Sink for UdpSinkPack {
 pub struct UdpSourcePack {
     pub socket: UdpSocket,
     pub buffer: Vec<u8>,
+}
+
+impl UdpSourcePack {
+    pub fn new(socket: UdpSocket, buffer_size: usize) -> Self {
+        Self {
+            socket,
+            buffer: vec![0; buffer_size]
+        }
+    }
 }
 
 impl Source for UdpSourcePack {
