@@ -17,8 +17,7 @@ pub fn get_sink_from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)
         let socket = UdpSocket::bind("0.0.0.0:0")?;
         socket.connect(address)?;
         let buffer_size = args.datagram_size;
-        let buffer = vec![0u8; buffer_size];
-        let pack = network::UdpSinkPack {socket, buffer};
+        let pack = network::UdpSinkPack::new(socket, buffer_size);
         info!("Sending to {address} datagrams of up to {buffer_size} bytes");
         (Box::new(pack), None)
     } else {

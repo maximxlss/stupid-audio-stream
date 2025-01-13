@@ -15,8 +15,7 @@ pub fn get_source_from_args(args: &Args) -> Result<(Box<dyn Source>, Option<Hand
     Ok(if let Some(address) = args.source.strip_prefix("udp://") {
         let socket = UdpSocket::bind(&address)?;
         let buffer_size = args.datagram_size;
-        let buffer = vec![0u8; buffer_size];
-        let pack = UdpSourcePack {socket, buffer};
+        let pack = UdpSourcePack::new(socket, buffer_size);
         info!("Listening on {address} to packets of a most {buffer_size} bytes");
         (Box::new(pack), None)
     } else {
