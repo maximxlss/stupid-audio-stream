@@ -21,9 +21,9 @@ impl UdpSinkPack {
 }
 
 impl Sink for UdpSinkPack {
-    fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize> {
+    fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<()> {
         if data.is_empty() {
-            return Ok(0);
+            return Ok(());
         }
         let n_sent = usize::min(self.buffer.len(), data.len());
         if n_sent == self.buffer.len() {
@@ -32,7 +32,7 @@ impl Sink for UdpSinkPack {
         data.read_exact(&mut self.buffer[..n_sent])?;
         self.socket.send(&self.buffer[..n_sent])?;
 
-        Ok(n_sent)
+        Ok(())
     }
 }
 
@@ -55,9 +55,9 @@ impl CheckedUdpSinkPack {
 }
 
 impl Sink for CheckedUdpSinkPack {
-    fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize> {
+    fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<()> {
         if data.is_empty() {
-            return Ok(0);
+            return Ok(());
         }
         let tag = self.current_id.to_be_bytes();
         let n_sent = usize::min(self.buffer.len(), data.len() + tag.len());
@@ -70,6 +70,6 @@ impl Sink for CheckedUdpSinkPack {
 
         self.current_id += 1;
 
-        Ok(n_sent)
+        Ok(())
     }
 }

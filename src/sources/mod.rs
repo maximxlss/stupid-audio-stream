@@ -10,7 +10,7 @@ pub mod device;
 pub mod network;
 
 pub trait Source {
-    fn read_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<usize>;
+    fn read_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<()>;
 }
 
 pub fn from_args(args: &Args) -> Result<(Box<dyn Source>, Option<wasapi::Handle>)> {

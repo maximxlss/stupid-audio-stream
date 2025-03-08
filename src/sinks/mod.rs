@@ -11,7 +11,7 @@ pub mod device;
 pub mod network;
 
 pub trait Sink {
-    fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize>;
+    fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<()>;
 }
 
 pub fn from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)> {

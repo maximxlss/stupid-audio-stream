@@ -11,7 +11,7 @@ pub struct DeviceSinkPack {
 }
 
 impl Sink for DeviceSinkPack {
-    fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize> {
+    fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<()> {
         let mut frames_to_write =
             self.client
                 .get_available_space_in_frames()
@@ -21,13 +21,11 @@ impl Sink for DeviceSinkPack {
             frames_to_write = data.len() / blockalign;
         }
         if frames_to_write == 0 {
-            return Ok(0);
+            return Ok(());
         }
-        let len_before = data.len();
         self.render_client
             .write_to_device_from_deque(frames_to_write, data, None)
             .map_err(|err| anyhow!("Couldn't write to device: {err}"))?;
-        let n_sent = len_before - data.len();
-        Ok(n_sent)
+        Ok(())
     }
 }

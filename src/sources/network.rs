@@ -20,10 +20,10 @@ impl UdpSourcePack {
 }
 
 impl Source for UdpSourcePack {
-    fn read_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<usize> {
+    fn read_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<()> {
         let (n_read, _) = self.socket.recv_from(self.buffer.as_mut_slice())?;
         buf.write_all(&self.buffer[..n_read])?;
-        Ok(n_read)
+        Ok(())
     }
 }
 
@@ -44,7 +44,7 @@ impl CheckedUdpSourcePack {
 }
 
 impl Source for CheckedUdpSourcePack {
-    fn read_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<usize> {
+    fn read_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<()> {
         let (n_read, _) = self.socket.recv_from(self.buffer.as_mut_slice())?;
         let tag_size = self.current_id.to_be_bytes().len();
         let supposed_id = u64::from_be_bytes(self.buffer[..tag_size].try_into().unwrap());
@@ -69,6 +69,6 @@ impl Source for CheckedUdpSourcePack {
 
         self.current_id += 1;
 
-        Ok(n_read)
+        Ok(())
     }
 }
