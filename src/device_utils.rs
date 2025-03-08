@@ -1,9 +1,10 @@
 use log::debug;
-use wasapi::{AudioClient, Device, DeviceCollection, DeviceState, Direction, WaveFormat};
-use anyhow::{anyhow, bail, Result};
+use wasapi::{AudioClient, WaveFormat};
 
-pub fn find_device_by_name(direction: Direction, query: &str) -> Result<Device> {
-    let collection = DeviceCollection::new(&direction)
+use anyhow::{Result, anyhow, bail};
+
+pub fn find_device_by_name(direction: wasapi::Direction, query: &str) -> Result<wasapi::Device> {
+    let collection = wasapi::DeviceCollection::new(&direction)
         .map_err(|err| anyhow!("Couldn't list devices for {direction:?} due to error: {err}"))?;
 
     let mut result = None;
@@ -33,12 +34,15 @@ pub fn find_device_by_name(direction: Direction, query: &str) -> Result<Device> 
     }
 }
 
-pub fn open_device_with_format(device: &Device, format: &WaveFormat) -> Result<AudioClient> {
+pub fn open_device_with_format(
+    device: &wasapi::Device,
+    format: &WaveFormat,
+) -> Result<AudioClient> {
     let state = device
         .get_state()
         .map_err(|err| anyhow!("Couldn't get device state due to error: {err}"))?;
 
-    let DeviceState::Active = state else {
+    let wasapi::DeviceState::Active = state else {
         bail!("Device is not active; it's state is {state}");
     };
 
@@ -48,7 +52,7 @@ pub fn open_device_with_format(device: &Device, format: &WaveFormat) -> Result<A
 
     client
         .initialize_client(
-            &format,
+            format,
             0,
             &device.get_direction(),
             &client.get_sharemode().unwrap_or(wasapi::ShareMode::Shared),
@@ -60,4 +64,3 @@ pub fn open_device_with_format(device: &Device, format: &WaveFormat) -> Result<A
 
     Ok(client)
 }
-

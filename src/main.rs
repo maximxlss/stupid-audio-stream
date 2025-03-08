@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use clap::Parser;
-use stupid_audio_stream::{sinks, sources, Args};
+use stupid_audio_stream::{Args, sinks, sources};
 use wasapi::initialize_mta;
 
 use anyhow::{Result, anyhow};

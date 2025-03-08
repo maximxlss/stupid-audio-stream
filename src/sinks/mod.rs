@@ -5,12 +5,14 @@ use wasapi::{Direction, Handle, WaveFormat};
 
 use anyhow::{Result, anyhow};
 
+use crate::{Args, device_utils};
+
+pub mod device;
+pub mod network;
 
 pub trait Sink {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<usize>;
 }
-
-use crate::{device::DeviceSinkPack, device_utils, network, Args};
 
 pub fn from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)> {
     Ok(if let Some(address) = args.sink.strip_prefix("udp://") {
@@ -27,7 +29,14 @@ pub fn from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)> {
             (Box::new(pack), None)
         }
     } else {
-        let format = WaveFormat::new(args.bits_per_sample, args.bits_per_sample, &wasapi::SampleType::Int, args.sample_rate, args.channels, None);
+        let format = WaveFormat::new(
+            args.bits_per_sample,
+            args.bits_per_sample,
+            &wasapi::SampleType::Int,
+            args.sample_rate,
+            args.channels,
+            None,
+        );
         let device = device_utils::find_device_by_name(Direction::Render, &args.sink)?;
         let client = device_utils::open_device_with_format(&device, &format)?;
         let render_client = client
@@ -45,10 +54,10 @@ pub fn from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)> {
             .map_err(|err| anyhow!("Couldn't get device name due to error: {err}"))?;
         info!("Sending to {name}");
         (
-            Box::new(DeviceSinkPack {
+            Box::new(device::DeviceSinkPack {
                 render_client,
                 client,
-                format: format,
+                format,
             }),
             Some(event_handle),
         )
