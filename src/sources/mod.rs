@@ -31,7 +31,7 @@ pub fn from_args(args: &Args) -> Result<(Box<dyn Source>, Option<wasapi::Handle>
         let format = wasapi::WaveFormat::new(
             args.bits_per_sample,
             args.bits_per_sample,
-            &wasapi::SampleType::Int,
+            if args.use_float { &wasapi::SampleType::Float } else { &wasapi::SampleType::Int },
             args.sample_rate,
             args.channels,
             None,

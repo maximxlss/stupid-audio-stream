@@ -36,6 +36,10 @@ pub struct Args {
     #[arg(short, long, default_value_t = 2)]
     pub channels: usize,
 
+    /// Use floating-point samples
+    #[arg(long)]
+    pub use_float: bool,
+
     /// Check UDP packet order and loss
     #[arg(long)]
     pub checked_udp: bool,
