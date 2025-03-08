@@ -10,11 +10,13 @@ pub struct UdpSinkPack {
 }
 
 impl UdpSinkPack {
-    pub fn new(socket: UdpSocket, buffer_size: usize) -> Self {
-        Self {
+    pub fn new(address: impl std::net::ToSocketAddrs, buffer_size: usize) -> Result<Self> {
+        let socket = UdpSocket::bind("0.0.0.0:0")?;
+        socket.connect(address)?;
+        Ok(Self {
             socket,
             buffer: vec![0; buffer_size],
-        }
+        })
     }
 }
 
@@ -41,12 +43,14 @@ pub struct CheckedUdpSinkPack {
 }
 
 impl CheckedUdpSinkPack {
-    pub fn new(socket: UdpSocket, buffer_size: usize) -> Self {
-        Self {
+    pub fn new(address: impl std::net::ToSocketAddrs, buffer_size: usize) -> Result<Self> {
+        let socket = UdpSocket::bind("0.0.0.0:0")?;
+        socket.connect(address)?;
+        Ok(Self {
             current_id: 0,
             socket,
             buffer: vec![0; buffer_size],
-        }
+        })
     }
 }
 

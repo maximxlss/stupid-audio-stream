@@ -11,11 +11,11 @@ pub struct UdpSourcePack {
 }
 
 impl UdpSourcePack {
-    pub fn new(socket: UdpSocket, buffer_size: usize) -> Self {
-        Self {
-            socket,
+    pub fn new(address: impl std::net::ToSocketAddrs, buffer_size: usize) -> Result<Self> {
+        Ok(Self {
+            socket: UdpSocket::bind(address)?,
             buffer: vec![0; buffer_size],
-        }
+        })
     }
 }
 
@@ -34,12 +34,12 @@ pub struct CheckedUdpSourcePack {
 }
 
 impl CheckedUdpSourcePack {
-    pub fn new(socket: UdpSocket, buffer_size: usize) -> Self {
-        Self {
+    pub fn new(address: impl std::net::ToSocketAddrs, buffer_size: usize) -> Result<Self> {
+        Ok(Self {
             current_id: 0,
-            socket,
+            socket: UdpSocket::bind(address)?,
             buffer: vec![0; buffer_size],
-        }
+        })
     }
 }
 

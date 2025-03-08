@@ -16,15 +16,13 @@ pub trait Sink {
 
 pub fn from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)> {
     Ok(if let Some(address) = args.sink.strip_prefix("udp://") {
-        let socket = UdpSocket::bind("0.0.0.0:0")?;
-        socket.connect(address)?;
         let buffer_size = args.datagram_size;
         if args.checked_udp {
-            let pack = network::CheckedUdpSinkPack::new(socket, buffer_size);
+            let pack = network::CheckedUdpSinkPack::new(address, buffer_size)?;
             info!("Sending to {address} datagrams of up to {buffer_size} bytes with loss checks");
             (Box::new(pack), None)
         } else {
-            let pack = network::UdpSinkPack::new(socket, buffer_size);
+            let pack = network::UdpSinkPack::new(address, buffer_size)?;
             info!("Sending to {address} datagrams of up to {buffer_size} bytes");
             (Box::new(pack), None)
         }
