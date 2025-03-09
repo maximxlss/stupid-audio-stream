@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, net::UdpSocket};
+use std::collections::VecDeque;
 
 use log::info;
 use wasapi::{Direction, Handle, WaveFormat};
@@ -26,6 +26,11 @@ pub fn from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)> {
             info!("Sending to {address} datagrams of up to {buffer_size} bytes");
             (Box::new(pack), None)
         }
+    } else if let Some(address) = args.sink.strip_prefix("idc://") {
+        let buffer_size = args.datagram_size;
+        let pack = network::IdcSinkPack::new(address, buffer_size)?;
+        info!("Sending to {address} datagrams of up to {buffer_size} bytes without caring");
+        (Box::new(pack), None)
     } else {
         let format = WaveFormat::new(
             args.bits_per_sample,

@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, net::UdpSocket};
+use std::collections::VecDeque;
 
 use log::info;
 
@@ -27,11 +27,20 @@ pub fn from_args(args: &Args) -> Result<(Box<dyn Source>, Option<wasapi::Handle>
             info!("Listening on {address} to packets of a most {buffer_size} bytes");
             (Box::new(pack), None)
         }
+    } else if let Some(address) = args.source.strip_prefix("idc://") {
+        let buffer_size = args.datagram_size;
+        let pack = network::IdcSourcePack::new(address, buffer_size)?;
+        info!("Listening on {address} to packets of a most {buffer_size} bytes without caring");
+        (Box::new(pack), None)
     } else {
         let format = wasapi::WaveFormat::new(
             args.bits_per_sample,
             args.bits_per_sample,
-            if args.use_float { &wasapi::SampleType::Float } else { &wasapi::SampleType::Int },
+            if args.use_float {
+                &wasapi::SampleType::Float
+            } else {
+                &wasapi::SampleType::Int
+            },
             args.sample_rate,
             args.channels,
             None,

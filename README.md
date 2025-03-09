@@ -8,3 +8,8 @@ Why did I make this? Because I needed a stupid simple headless way to stream aud
 
 Should you use this? No, probably not, but you can try.
 
+### 🔥 NEW! 🔥
+UDP turned out to be not stable and not stateless enough, so I've implemented an alternative. To use it, just use urls with protocol `idc` like `idc://1.2.3.4:5678` (stands for I Don't Care). This thing will establish a TCP connection when possible (with source as the server). In case of any connection errors, it will silently drop everything, while trying to reconnect. Sounds crazy, right? Sounds perfect to me.
+
+In my testing it actually survives restarting either side and disconnecting the cable, so you can just run it in any order or way you want and forget about it. 
+

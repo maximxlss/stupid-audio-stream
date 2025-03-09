@@ -8,4 +8,5 @@ anyhow = "1.0.97"
 clap = { version = "4.5.31", features = ["derive"] }
 log = "0.4.26"
 simplelog = "0.12.2"
+socket2 = "0.5.8"
 wasapi = "0.16.0"
