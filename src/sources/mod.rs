@@ -16,7 +16,7 @@ pub trait Source {
 pub fn from_args(args: &Args) -> Result<(Box<dyn Source>, Option<wasapi::Handle>)> {
     Ok(if let Some(address) = args.source.strip_prefix("udp://") {
         let buffer_size = args.datagram_size;
-        if args.checked_udp {
+        if args.counted_udp {
             let pack = network::CheckedUdpSourcePack::new(address, buffer_size)?;
             info!(
                 "Listening on {address} to packets of a most {buffer_size} bytes with loss checks"

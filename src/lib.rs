@@ -42,5 +42,5 @@ pub struct Args {
 
     /// Check UDP packet order and loss
     #[arg(long)]
-    pub checked_udp: bool,
+    pub counted_udp: bool,
 }

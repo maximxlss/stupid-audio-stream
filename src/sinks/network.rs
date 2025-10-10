@@ -41,13 +41,13 @@ impl Sink for UdpSinkPack {
     }
 }
 
-pub struct CheckedUdpSinkPack {
+pub struct CountedUdpSinkPack {
     pub current_id: u64,
     pub socket: UdpSocket,
     pub buffer: Vec<u8>,
 }
 
-impl CheckedUdpSinkPack {
+impl CountedUdpSinkPack {
     pub fn new(address: impl std::net::ToSocketAddrs, buffer_size: usize) -> Result<Self> {
         let socket = UdpSocket::bind("0.0.0.0:0")?;
         socket.connect(address)?;
@@ -59,7 +59,7 @@ impl CheckedUdpSinkPack {
     }
 }
 
-impl Sink for CheckedUdpSinkPack {
+impl Sink for CountedUdpSinkPack {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<()> {
         if data.is_empty() {
             return Ok(());
