@@ -8,6 +8,8 @@ use anyhow::{Result, anyhow};
 use log::warn;
 use simplelog::{self, SimpleLogger};
 
+const HYPOT_AUDIO_ALIGNMENT: usize = 128; // TODO: use real nBlockAlign
+
 fn main() -> Result<()> {
     SimpleLogger::init(
         simplelog::LevelFilter::Debug,
@@ -21,6 +23,12 @@ fn main() -> Result<()> {
     initialize_mta().unwrap();
 
     let args = Args::parse();
+
+    if args.buffer_limit < HYPOT_AUDIO_ALIGNMENT * 2 {
+        return Err(anyhow!(
+            "Buffer limit must be at least {}", HYPOT_AUDIO_ALIGNMENT * 2
+        ));
+    }
 
     let mut event_handlers = Vec::new();
 
@@ -40,7 +48,8 @@ fn main() -> Result<()> {
         source.read_to_deque(&mut deq)?;
         sink.send_from_deque(&mut deq)?;
         if deq.len() > args.buffer_limit {
-            deq.clear();
+            let n_blocks = deq.len() / HYPOT_AUDIO_ALIGNMENT;
+            deq.drain(0..(n_blocks * HYPOT_AUDIO_ALIGNMENT));
             warn!("Buffer too full, clearing.");
         }
         for event_handler in &event_handlers {
