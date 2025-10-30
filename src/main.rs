@@ -26,7 +26,8 @@ fn main() -> Result<()> {
 
     if args.buffer_limit < HYPOT_AUDIO_ALIGNMENT * 2 {
         return Err(anyhow!(
-            "Buffer limit must be at least {}", HYPOT_AUDIO_ALIGNMENT * 2
+            "Buffer limit must be at least {}",
+            HYPOT_AUDIO_ALIGNMENT * 2
         ));
     }
 
