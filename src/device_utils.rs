@@ -53,10 +53,11 @@ pub fn open_device_with_format(
     client
         .initialize_client(
             format,
-            0,
             &device.get_direction(),
-            &client.get_sharemode().unwrap_or(wasapi::ShareMode::Shared),
-            true,
+            &wasapi::StreamMode::EventsShared {
+                autoconvert: true,
+                buffer_duration_hns: 100000,
+            }, // TODO: figure out what to do with this buffer size
         )
         .map_err(|err| anyhow!("Can't initialize client: {err}"))?;
 
