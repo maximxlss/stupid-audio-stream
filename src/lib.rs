@@ -1,4 +1,4 @@
-use clap::{Parser, command};
+use clap::Parser;
 
 pub mod device_utils;
 pub mod sinks;
