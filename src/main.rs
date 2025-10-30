@@ -53,6 +53,7 @@ fn main() -> Result<()> {
             warn!("Buffer too full, clearing.");
         }
         for event_handler in &event_handlers {
+            // TODO: properly handle multiple handlers
             event_handler
                 .wait_for_event(1000)
                 .map_err(|err| anyhow!("Timeout error: {err}"))?;
