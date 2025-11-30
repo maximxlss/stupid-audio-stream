@@ -112,7 +112,6 @@ impl IdcSourcePack {
             socket2::Type::STREAM,
             Some(socket2::Protocol::TCP),
         )?;
-        listener.set_nonblocking(true)?;
         listener.bind(address)?;
         listener.listen(1)?;
         Ok(listener)
@@ -134,24 +133,24 @@ impl IdcSourcePack {
 
 impl RecvAudio for IdcSourcePack {
     fn recv_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<()> {
-        match &mut self.socket {
-            None => {
-                if let Ok((s, addr)) = self.listener.accept() {
-                    self.socket = Some(s);
-                    debug!("Accepted connection from {:?}", addr);
-                }
+        loop {
+            if self.socket.is_none() {
+                // wait for connection
+                let (s, addr) = self.listener.accept()?;
+                debug!("Accepted connection from {:?}", addr);
+                self.socket = Some(s);
             }
-            Some(s) => match s.read(self.buffer.as_mut_slice()) {
-                Ok(n_read) => buf.write_all(&self.buffer[..n_read])?,
-                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {}
-                _ => {
-                    self.socket = None;
-                    debug!("Connection dropped");
-                }
-            },
-        }
+            let socket = self.socket.as_mut().unwrap();
 
-        Ok(())
+            match socket.read(self.buffer.as_mut_slice()) {
+                Ok(0) => unreachable!(),
+                Ok(n_read) => {
+                    buf.write_all(&self.buffer[..n_read])?;
+                    return Ok(())
+                },
+                Err(_) => self.socket = None,
+            }
+        }
     }
 }
 
