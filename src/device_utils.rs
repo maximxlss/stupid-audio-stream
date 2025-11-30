@@ -4,7 +4,8 @@ use wasapi::{AudioClient, WaveFormat};
 use anyhow::{Result, anyhow, bail};
 
 pub fn find_device_by_name(direction: wasapi::Direction, query: &str) -> Result<wasapi::Device> {
-    let collection = wasapi::DeviceCollection::new(&direction)
+    let enumerator = wasapi::DeviceEnumerator::new()?;
+    let collection = enumerator.get_device_collection(&direction)
         .map_err(|err| anyhow!("Couldn't list devices for {direction:?} due to error: {err}"))?;
 
     let mut result = None;
