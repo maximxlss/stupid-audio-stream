@@ -61,3 +61,5 @@ impl<T: SendAudio + Restart> SendAudioRestart for T {}
 
 pub trait RecvAudioRestart: RecvAudio + Restart {}
 impl<T: RecvAudio + Restart> RecvAudioRestart for T {}
+
+pub const HYPOT_AUDIO_ALIGNMENT: usize = 128; // TODO: use real nBlockAlign

@@ -5,7 +5,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::Restart;
+use crate::{HYPOT_AUDIO_ALIGNMENT, Restart};
 
 use super::SendAudio;
 use anyhow::{Result, anyhow};
@@ -161,7 +161,8 @@ impl SendAudio for IdcSinkPack {
                     self.last_connection_attempt = Instant::now();
                 }
                 // Couldn't send, just consume the data
-                data.clear();
+                let n_blocks = data.len() / HYPOT_AUDIO_ALIGNMENT;
+                data.drain(0..(n_blocks * HYPOT_AUDIO_ALIGNMENT));
             }
         };
         Ok(())

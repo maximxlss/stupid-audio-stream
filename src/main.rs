@@ -1,14 +1,12 @@
 use std::collections::VecDeque;
 
 use clap::Parser;
-use stupid_audio_stream::{Args, sinks, sources};
+use stupid_audio_stream::{Args, HYPOT_AUDIO_ALIGNMENT, sinks, sources};
 use wasapi::initialize_mta;
 
 use anyhow::{Result, anyhow};
 use log::warn;
 use simplelog::{self, SimpleLogger};
-
-const HYPOT_AUDIO_ALIGNMENT: usize = 128; // TODO: use real nBlockAlign
 
 fn main() -> Result<()> {
     SimpleLogger::init(
