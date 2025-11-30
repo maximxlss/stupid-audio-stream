@@ -30,18 +30,8 @@ fn main() -> Result<()> {
             HYPOT_AUDIO_ALIGNMENT * 2
         ));
     }
-
-    let mut event_handlers = Vec::new();
-
-    let (mut source, possible_event_handler) = sources::from_args(&args)?;
-    if let Some(event_handler) = possible_event_handler {
-        event_handlers.push(event_handler);
-    }
-
-    let (mut sink, possible_event_handler) = sinks::from_args(&args)?;
-    if let Some(event_handler) = possible_event_handler {
-        event_handlers.push(event_handler);
-    }
+    let mut source = sources::from_args(&args)?;
+    let mut sink = sinks::from_args(&args)?;
 
     let mut deq = VecDeque::new();
 
@@ -49,15 +39,16 @@ fn main() -> Result<()> {
         source.recv_to_deque(&mut deq)?;
         sink.send_from_deque(&mut deq)?;
         if deq.len() > args.buffer_limit {
-            let n_blocks = deq.len() / HYPOT_AUDIO_ALIGNMENT;
-            deq.drain(0..(n_blocks * HYPOT_AUDIO_ALIGNMENT));
-            warn!("Buffer too full, clearing.");
-        }
-        for event_handler in &event_handlers {
-            // TODO: properly handle multiple handlers
-            event_handler
-                .wait_for_event(1000)
-                .map_err(|err| anyhow!("Timeout error: {err}"))?;
+            if args.restart_on_buffer_filled {
+                source.restart()?;
+                sink.restart()?;
+                deq.clear();
+                warn!("Buffer too full, restarting source and sink.");
+            } else {
+                let n_blocks = deq.len() / HYPOT_AUDIO_ALIGNMENT;
+                deq.drain(0..(n_blocks * HYPOT_AUDIO_ALIGNMENT));
+                warn!("Buffer too full, clearing.");
+            }
         }
     }
 }

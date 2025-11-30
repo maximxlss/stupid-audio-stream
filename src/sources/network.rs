@@ -8,7 +8,7 @@ use std::{
 use anyhow::{Result, anyhow};
 use log::{debug, warn};
 
-use crate::sources::RecvAudio;
+use crate::{Restart, sources::RecvAudio};
 
 pub struct UdpSourcePack {
     pub socket: UdpSocket,
@@ -28,6 +28,14 @@ impl RecvAudio for UdpSourcePack {
     fn recv_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<()> {
         let (n_read, _) = self.socket.recv_from(self.buffer.as_mut_slice())?;
         buf.write_all(&self.buffer[..n_read])?;
+        Ok(())
+    }
+}
+
+impl Restart for UdpSourcePack {
+    fn restart(&mut self) -> Result<()> {
+        let addr = self.socket.local_addr()?;
+        self.socket = UdpSocket::bind(addr)?;
         Ok(())
     }
 }
@@ -78,6 +86,15 @@ impl RecvAudio for CheckedUdpSourcePack {
     }
 }
 
+impl Restart for CheckedUdpSourcePack {
+    fn restart(&mut self) -> Result<()> {
+        self.current_id = 0;
+        let addr = self.socket.local_addr()?;
+        self.socket = UdpSocket::bind(addr)?;
+        Ok(())
+    }
+}
+
 pub struct IdcSourcePack {
     listener: socket2::Socket,
     socket: Option<socket2::Socket>,
@@ -85,11 +102,7 @@ pub struct IdcSourcePack {
 }
 
 impl IdcSourcePack {
-    pub fn new(address: impl std::net::ToSocketAddrs, buffer_size: usize) -> Result<Self> {
-        let address = address
-            .to_socket_addrs()?
-            .next()
-            .ok_or(anyhow!("Couldn't get socket addr."))?;
+    fn create_listener(address: &socket2::SockAddr) -> Result<socket2::Socket> {
         let listener = socket2::Socket::new(
             if address.is_ipv4() {
                 socket2::Domain::IPV4
@@ -99,10 +112,18 @@ impl IdcSourcePack {
             socket2::Type::STREAM,
             Some(socket2::Protocol::TCP),
         )?;
-        let address = address.into();
         listener.set_nonblocking(true)?;
-        listener.bind(&address)?;
+        listener.bind(address)?;
         listener.listen(1)?;
+        Ok(listener)
+    }
+
+    pub fn new(address: impl std::net::ToSocketAddrs, buffer_size: usize) -> Result<Self> {
+        let address = address
+            .to_socket_addrs()?
+            .next()
+            .ok_or(anyhow!("Couldn't get socket addr."))?;
+        let listener = Self::create_listener(&address.into())?;
         Ok(Self {
             listener,
             socket: None,
@@ -130,6 +151,15 @@ impl RecvAudio for IdcSourcePack {
             },
         }
 
+        Ok(())
+    }
+}
+
+impl Restart for IdcSourcePack {
+    fn restart(&mut self) -> Result<()> {
+        self.socket = None;
+        let address = self.listener.local_addr()?;
+        self.listener = Self::create_listener(&address)?;
         Ok(())
     }
 }

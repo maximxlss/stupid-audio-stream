@@ -1,4 +1,7 @@
+use anyhow::Result;
 use clap::Parser;
+
+use crate::{sinks::SendAudio, sources::RecvAudio};
 
 pub mod device_utils;
 pub mod sinks;
@@ -43,4 +46,18 @@ pub struct Args {
     /// Check UDP packet order and loss
     #[arg(long)]
     pub counted_udp: bool,
+
+    /// Restart the sink and source completely if the buffer fills up
+    #[arg(long)]
+    pub restart_on_buffer_filled: bool,
 }
+
+pub trait Restart {
+    fn restart(&mut self) -> Result<()>;
+}
+
+pub trait SendAudioRestart: SendAudio + Restart {}
+impl<T: SendAudio + Restart> SendAudioRestart for T {}
+
+pub trait RecvAudioRestart: RecvAudio + Restart {}
+impl<T: RecvAudio + Restart> RecvAudioRestart for T {}

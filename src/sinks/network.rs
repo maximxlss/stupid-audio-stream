@@ -5,6 +5,8 @@ use std::{
     time::{Duration, Instant},
 };
 
+use crate::Restart;
+
 use super::SendAudio;
 use anyhow::{Result, anyhow};
 use log::{debug, warn};
@@ -22,6 +24,15 @@ impl UdpSinkPack {
             socket,
             buffer: vec![0; buffer_size],
         })
+    }
+}
+
+impl Restart for UdpSinkPack {
+    fn restart(&mut self) -> Result<()> {
+        let remote_addr = self.socket.peer_addr()?;
+        self.socket = UdpSocket::bind("0.0.0.0:0")?;
+        self.socket.connect(remote_addr)?;
+        Ok(())
     }
 }
 
@@ -79,6 +90,16 @@ impl SendAudio for CountedUdpSinkPack {
     }
 }
 
+impl Restart for CountedUdpSinkPack {
+    fn restart(&mut self) -> Result<()> {
+        self.current_id = 0;
+        let remote_addr = self.socket.peer_addr()?;
+        self.socket = UdpSocket::bind("0.0.0.0:0")?;
+        self.socket.connect(remote_addr)?;
+        Ok(())
+    }
+}
+
 pub struct IdcSinkPack {
     address: socket2::SockAddr,
     socket: socket2::Socket,
@@ -127,9 +148,10 @@ impl SendAudio for IdcSinkPack {
         data.read_exact(&mut self.buffer[..n_sent])?;
         match self.socket.send(&self.buffer[..n_sent]) {
             Ok(_) => {}
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {}
-            _ => {
-                if self.last_connection_attempt.elapsed() > Duration::from_millis(2000) {
+            Err(error) => {
+                if error.kind() == std::io::ErrorKind::WouldBlock {
+                    debug!("Encountered WouldBlock: {error:?}");
+                } else if self.last_connection_attempt.elapsed() > Duration::from_millis(2000) {
                     debug!("Can't send so trying to reconnect");
                     match self.socket.connect(&self.address) {
                         Ok(_) => {}
@@ -138,8 +160,17 @@ impl SendAudio for IdcSinkPack {
                     };
                     self.last_connection_attempt = Instant::now();
                 }
+                // Couldn't send, just consume the data
+                data.clear();
             }
         };
+        Ok(())
+    }
+}
+
+impl Restart for IdcSinkPack {
+    fn restart(&mut self) -> Result<()> {
+        self.socket = Self::create_socket(&self.address)?;
         Ok(())
     }
 }
