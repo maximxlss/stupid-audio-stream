@@ -10,11 +10,11 @@ use crate::{Args, device_utils};
 pub mod device;
 pub mod network;
 
-pub trait Sink {
+pub trait SendAudio {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<()>;
 }
 
-pub fn from_args(args: &Args) -> Result<(Box<dyn Sink>, Option<Handle>)> {
+pub fn from_args(args: &Args) -> Result<(Box<dyn SendAudio>, Option<Handle>)> {
     Ok(if let Some(address) = args.sink.strip_prefix("udp://") {
         let buffer_size = args.datagram_size;
         if args.counted_udp {

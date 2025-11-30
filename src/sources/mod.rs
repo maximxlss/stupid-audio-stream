@@ -9,11 +9,11 @@ use crate::{Args, device_utils};
 pub mod device;
 pub mod network;
 
-pub trait Source {
-    fn read_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<()>;
+pub trait RecvAudio {
+    fn recv_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<()>;
 }
 
-pub fn from_args(args: &Args) -> Result<(Box<dyn Source>, Option<wasapi::Handle>)> {
+pub fn from_args(args: &Args) -> Result<(Box<dyn RecvAudio>, Option<wasapi::Handle>)> {
     Ok(if let Some(address) = args.source.strip_prefix("udp://") {
         let buffer_size = args.datagram_size;
         if args.counted_udp {

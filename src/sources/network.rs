@@ -8,7 +8,7 @@ use std::{
 use anyhow::{Result, anyhow};
 use log::{debug, warn};
 
-use crate::sources::Source;
+use crate::sources::RecvAudio;
 
 pub struct UdpSourcePack {
     pub socket: UdpSocket,
@@ -24,8 +24,8 @@ impl UdpSourcePack {
     }
 }
 
-impl Source for UdpSourcePack {
-    fn read_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<()> {
+impl RecvAudio for UdpSourcePack {
+    fn recv_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<()> {
         let (n_read, _) = self.socket.recv_from(self.buffer.as_mut_slice())?;
         buf.write_all(&self.buffer[..n_read])?;
         Ok(())
@@ -48,8 +48,8 @@ impl CheckedUdpSourcePack {
     }
 }
 
-impl Source for CheckedUdpSourcePack {
-    fn read_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<()> {
+impl RecvAudio for CheckedUdpSourcePack {
+    fn recv_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<()> {
         let (n_read, _) = self.socket.recv_from(self.buffer.as_mut_slice())?;
         let tag_size = self.current_id.to_be_bytes().len();
         let supposed_id = u64::from_be_bytes(self.buffer[..tag_size].try_into().unwrap());
@@ -111,8 +111,8 @@ impl IdcSourcePack {
     }
 }
 
-impl Source for IdcSourcePack {
-    fn read_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<()> {
+impl RecvAudio for IdcSourcePack {
+    fn recv_to_deque(&mut self, buf: &mut VecDeque<u8>) -> Result<()> {
         match &mut self.socket {
             None => {
                 if let Ok((s, addr)) = self.listener.accept() {

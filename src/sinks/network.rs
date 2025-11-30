@@ -5,7 +5,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::Sink;
+use super::SendAudio;
 use anyhow::{Result, anyhow};
 use log::{debug, warn};
 
@@ -25,7 +25,7 @@ impl UdpSinkPack {
     }
 }
 
-impl Sink for UdpSinkPack {
+impl SendAudio for UdpSinkPack {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<()> {
         if data.is_empty() {
             return Ok(());
@@ -59,7 +59,7 @@ impl CountedUdpSinkPack {
     }
 }
 
-impl Sink for CountedUdpSinkPack {
+impl SendAudio for CountedUdpSinkPack {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<()> {
         if data.is_empty() {
             return Ok(());
@@ -118,7 +118,7 @@ impl IdcSinkPack {
     }
 }
 
-impl Sink for IdcSinkPack {
+impl SendAudio for IdcSinkPack {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<()> {
         let n_sent = usize::min(self.buffer.len(), data.len());
         if n_sent == self.buffer.len() {

@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use anyhow::{Result, anyhow};
 
-use super::Sink;
+use super::SendAudio;
 
 pub struct DeviceSinkPack {
     pub client: wasapi::AudioClient,
@@ -10,7 +10,7 @@ pub struct DeviceSinkPack {
     pub format: wasapi::WaveFormat,
 }
 
-impl Sink for DeviceSinkPack {
+impl SendAudio for DeviceSinkPack {
     fn send_from_deque(&mut self, data: &mut VecDeque<u8>) -> Result<()> {
         let mut frames_to_write =
             self.client

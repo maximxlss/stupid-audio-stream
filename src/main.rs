@@ -46,7 +46,7 @@ fn main() -> Result<()> {
     let mut deq = VecDeque::new();
 
     loop {
-        source.read_to_deque(&mut deq)?;
+        source.recv_to_deque(&mut deq)?;
         sink.send_from_deque(&mut deq)?;
         if deq.len() > args.buffer_limit {
             let n_blocks = deq.len() / HYPOT_AUDIO_ALIGNMENT;
